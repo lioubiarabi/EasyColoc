@@ -12,77 +12,101 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Users
-        $adminId = DB::table('users')->insertGetId([
-            'name' => 'Global Admin',
-            'email' => 'admin@easycoloc.com',
-            'password' => Hash::make('password'),
-            'is_active' => true,
-            'is_global_admin' => true,
-            'reputation' => '10',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $users = [
+            ['name' => 'Arabi admin', 'email' => 'arabi.admin@easycoloc.com', 'role' => true, 'rep' => 10],
+            ['name' => 'Bob Dupont', 'email' => 'bob@easycoloc.com', 'role' => false, 'rep' => 5],
+            ['name' => 'Clara Lebeau', 'email' => 'clara@easycoloc.com', 'role' => false, 'rep' => 8],
+            ['name' => 'David Morel', 'email' => 'david@easycoloc.com', 'role' => false, 'rep' => 3],
+        ];
 
-        $memberId = DB::table('users')->insertGetId([
-            'name' => 'Normal Member',
-            'email' => 'member@easycoloc.com',
-            'password' => Hash::make('password'),
-            'is_active' => true,
-            'is_global_admin' => false,
-            'reputation' => '5',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $userIds = [];
+        foreach ($users as $user) {
+            $userIds[] = DB::table('users')->insertGetId([
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'password' => Hash::make('password'),
+                'is_active' => true,
+                'is_global_admin' => $user['role'],
+                'reputation' => $user['rep'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
+        // 2. Create Colocation
         $colocId = DB::table('colocations')->insertGetId([
-            'name' => 'Villa YouCode',
+            'name' => 'The Lilacs Apartment',
             'status' => 'active',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        DB::table('colocation_user')->insert([
-            ['is_admin' => true, 'user_id' => $adminId, 'colocation_id' => $colocId, 'created_at' => now()],
-            ['is_admin' => false, 'user_id' => $memberId, 'colocation_id' => $colocId, 'created_at' => now()]
-        ]);
+        // 3. Attach all 4 users to the Colocation
+        foreach ($userIds as $index => $id) {
+            DB::table('colocation_user')->insert([
+                'is_admin' => $index === 0, // Alice is owner
+                'user_id' => $id,
+                'colocation_id' => $colocId,
+                'created_at' => now()->subMonths(rand(1, 4)) // Joined at different times
+            ]);
+        }
 
-        $catId = DB::table('categories')->insertGetId([
-            'name' => 'Internet / Wifi',
-            'created_at' => now(),
-        ]);
+        // 4. Create Categories
+        $categories = ['Rent', 'Groceries', 'Electricity', 'Internet', 'Misc'];
+        $catIds = [];
+        foreach ($categories as $cat) {
+            $catIds[$cat] = DB::table('categories')->insertGetId([
+                'name' => $cat,
+                'created_at' => now(),
+            ]);
+        }
 
-        $expenseId = DB::table('expenses')->insertGetId([
-            'title' => 'Fibre Optique Février',
-            'colocation_id' => $colocId,
-            'category_id' => $catId,
-            'created_at' => now(),
-        ]);
+        // 5. Create Expenses (Now with user_id)
+        $expenses = [
+            ['title' => 'July Rent', 'cat' => 'Rent', 'user' => 0, 'date' => now()->subDays(10)], // Alice
+            ['title' => 'Carrefour Groceries', 'cat' => 'Groceries', 'user' => 1, 'date' => now()->subDays(5)], // Bob
+            ['title' => 'Electricity Bill', 'cat' => 'Electricity', 'user' => 2, 'date' => now()->subDays(2)], // Clara
+        ];
 
-        DB::table('settlement')->insert([
+        $expenseIds = [];
+        foreach ($expenses as $exp) {
+            $expenseIds[] = DB::table('expenses')->insertGetId([
+                'title' => $exp['title'],
+                'colocation_id' => $colocId,
+                'category_id' => $catIds[$exp['cat']],
+                'user_id' => $userIds[$exp['user']], // Added user_id here!
+                'created_at' => $exp['date'],
+            ]);
+        }
+
+        foreach ($userIds as $id) {
+            DB::table('settlement')->insert([
+                'amount' => 300,
+                'paid_at' => ($id === $userIds[0] || $id === $userIds[1]) ? now() : null, // Alice & Bob paid, Clara & David haven't
+                'user_id' => $id,
+                'expense_id' => $expenseIds[0],
+                'created_at' => now()->subDays(10),
+            ]);
+        }
+
+        DB::table('invitations')->insert([
             [
-                'amount' => 50, // 50 DH
-                'paid_at' => now(),
-                'user_id' => $adminId,
-                'expense_id' => $expenseId,
-                'created_at' => now()
+                'UUID' => substr(Str::uuid()->toString(), 0, 32),
+                'status' => 'pending',
+                'email' => 'emma.smith@example.com',
+                'colocation_id' => $colocId,
+                'created_at' => now()->subDays(2),
+                'updated_at' => now()->subDays(2),
             ],
             [
-                'amount' => 50,
-                'paid_at' => null,
-                'user_id' => $memberId,
-                'expense_id' => $expenseId,
-                'created_at' => now()
+                'UUID' => substr(Str::uuid()->toString(), 0, 32),
+                'status' => 'pending',
+                'email' => 'marc.jones@example.com',
+                'colocation_id' => $colocId,
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(5),
             ]
         ]);
 
-        DB::table('invitations')->insert([
-            'UUID' => substr(Str::uuid()->toString(), 0, 32),
-            'status' => 'pending',
-            'email' => 'newfriend@youcode.ma',
-            'colocation_id' => $colocId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 }

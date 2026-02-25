@@ -34,14 +34,17 @@ class User extends Authenticatable
     public function colocations(): BelongsToMany
     {
         return $this->belongsToMany(Colocation::class, 'colocation_user')
-            ->using(ColocationUser::class)
-            ->withPivot('id', 'is_admin', 'left_at', 'created_at')
-            ->withTimestamps();
+            ->withPivot('id', 'is_admin', 'left_at', 'created_at');
     }
 
 
     public function settlements(): HasMany
     {
         return $this->hasMany(Settlement::class);
+    }
+
+    public function hasActiveColocation(): bool
+    {
+        return $this->colocations()->wherePivotNull('left_at')->exists();
     }
 }
