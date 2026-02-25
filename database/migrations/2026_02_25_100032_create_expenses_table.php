@@ -9,9 +9,11 @@ return new class extends Migration {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->string('title', 220);
+            $table->decimal('amount', 10, 2);
             $table->timestamp('created_at')->useCurrent();
             $table->foreignId('colocation_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
         });
     }
 
