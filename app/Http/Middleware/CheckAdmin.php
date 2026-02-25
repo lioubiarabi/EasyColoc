@@ -12,14 +12,12 @@ class CheckAdmin
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response) $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(Auth::check() && !Auth::user()->is_global_admin){
-            Auth::logout();
-
-            return redirect()->route('welcome');
+        if (Auth::check() && !Auth::user()->is_global_admin) {
+            return redirect()->route('dashboard')->withErrors(['error' => 'not allowed action.']);
         }
         return $next($request);
     }
