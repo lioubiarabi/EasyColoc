@@ -53,17 +53,32 @@ class ColocationController extends Controller
     public function leave(Colocation $colocation)
     {
         $user = Auth::user();
+        $membership = $colocation->users()->where('user_id', $user->id)->first();
+        $isOwner = $membership && $membership->pivot->is_admin;
+
+        if ($isOwner) {
+            $activeMembersCount = $colocation->users()->wherePivotNull('left_at')->count();
+            if ($activeMembersCount > 1) {
+                return back()->withErrors(['error' => 'As the owner, you cannot leave the colocation while there are other active members. You must remove them first.']);
+            }
+        }
 
         $totalPaid = Expense::where('colocation_id', $colocation->id)->where('user_id', $user->id)->sum('amount');
         $totalShare = Settlement::whereHas('expense', fn($q) => $q->where('colocation_id', $colocation->id))->where('user_id', $user->id)->sum('amount');
+        $netBalance = $totalPaid - $totalShare;
 
-        if (( $totalPaid - $totalShare) < -0.01) {
+        if ($netBalance < -0.01) {
             $user->decrement('reputation');
         } else {
             $user->increment('reputation');
         }
 
         $colocation->users()->updateExistingPivot($user->id, ['left_at' => now()]);
+
+        if ($isOwner) {
+            $colocation->update(['status' => 'inactive']);
+            return redirect()->route('dashboard')->with('success', 'You have closed the colocation.');
+        }
 
         return redirect()->route('dashboard')->with('success', 'You have left the colocation.');
     }
