@@ -1,59 +1,169 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏠 EasyColoc — Roommate Expense Management Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> A full-stack web application to manage shared living expenses — track costs, auto-calculate debts, and know exactly who owes what to whom. No more manual calculations or conflicts.
 
-## About Laravel
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=flat-square&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP%208.2+-777BB4?style=flat-square&logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🔐 Authentication & Roles
+- Registration and login via Laravel Breeze
+- **First registered user** is automatically promoted to **Global Admin**
+- Three roles: `Global Admin`, `Owner`, `Member`
+- Banned users are auto-disconnected and blocked from all access
 
-## Learning Laravel
+### 🏘️ Colocation Management
+- Create a colocation (creator becomes Owner automatically)
+- Invite members via unique email token
+- Accept or decline invitations
+- **One active colocation per user** — enforced at creation and invitation
+- Owner can remove members or cancel the colocation
+- Members can leave freely (except Owner)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 💸 Expense Tracking
+- Add shared expenses (title, amount, date, category, payer)
+- Full expense history per colocation
+- Filter expenses by month
+- Statistics by category and month
+- Delete expenses
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 📊 Balance & Debt Calculation
+- Auto-calculates each member's balance: `total paid − individual share`
+- Simplified settlement view: **"who owes what to whom"**
+- Debt reduction by recording payments ("Mark as paid")
+- Balances recalculate instantly on every change
 
-## Laravel Sponsors
+### ⭐ Reputation System
+- **+1** when leaving or colocation cancelled with no debt
+- **−1** when leaving or colocation cancelled with outstanding debt
+- Special rule: if Owner removes a member with debt, the debt is transferred to the Owner
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 🛡️ Global Admin Dashboard
+- Platform-wide statistics: users, colocations, total expenses
+- Ban / unban users
+- View all active and cancelled colocations
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 👥 Actors & Roles
 
-## Contributing
+| Role | Permissions |
+|---|---|
+| **Member** | View colocation, add expenses, mark payments, leave |
+| **Owner** | All Member actions + invite/remove members, manage categories, cancel colocation |
+| **Global Admin** | Platform stats, ban/unban users — can also be Owner or Member |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 🗄️ Database Schema
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Table | Description |
+|---|---|
+| `users` | Auth + global admin flag + reputation score |
+| `colocations` | Colocation info, status (active/cancelled) |
+| `memberships` | Pivot: user ↔ colocation, role, joined_at, left_at |
+| `invitations` | Token-based invitations with status |
+| `expenses` | Amount, payer, date, category |
+| `categories` | Expense categories per colocation |
+| `payments` | Settlement records between two members |
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 🛠️ Tech Stack
 
-## License
+| Technology | Usage |
+|---|---|
+| Laravel 11 | MVC framework, routing, Eloquent ORM |
+| PHP 8.2+ | Backend logic, business rules |
+| MySQL | Relational database |
+| Laravel Breeze | Authentication scaffolding |
+| Blade | Server-side templating |
+| TailwindCSS | Responsive UI |
+| Vite | Asset bundling |
+| PHPUnit | Automated testing |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## 🚀 Getting Started
+
+```bash
+git clone https://github.com/lioubiarabi/EasyColoc.git
+cd EasyColoc
+composer install
+npm install && npm run build
+cp .env.example .env
+php artisan key:generate
+```
+
+Configure your database in `.env`, then:
+
+```bash
+php artisan migrate --seed
+php artisan serve
+```
+
+Open `http://localhost:8000`
+
+> 💡 The **first account you register** will automatically become the Global Admin.
+
+### Test Credentials (after seeding)
+```
+Admin:   admin@easycoloc.ma  / password
+Owner:   owner@easycoloc.ma  / password
+Member:  member@easycoloc.ma / password
+```
+
+---
+
+## 📐 Key Business Rules
+
+- A user can only be in **one active colocation** at a time
+- Invitations are **email-bound** — the invited email must match the registering user
+- Owner cannot leave — they must cancel the colocation or transfer ownership
+- Cancelling with unpaid debts applies reputation penalties to concerned members
+- If an owner removes a member with debt → the debt is reassigned to the owner
+- Cancelled bookings within 24h of event → 50% refund policy
+
+---
+
+## 📄 Documentation
+
+All UML diagrams are in the `docs/` folder:
+- **Use Case Diagram** — 3 actors, full interaction map
+- **Class Diagram** — domain model with relations
+- **ERD** — full database schema
+
+---
+
+## 🎯 Project Context
+
+Built at **Youcode** as a 5-day sprint (Feb 23–27, 2026). The goal: replace the chaos of WhatsApp debt tracking and manual splits with a clean, role-based web application that auto-calculates who owes what to whom in real time.
+
+---
+
+## 💡 What I Learned
+
+- Designing complex role systems (3 actor types, overlapping permissions)
+- Token-based invitation flows with email validation
+- Automatic debt calculation and settlement simplification algorithms
+- Eloquent `belongsToMany` with pivot table attributes (`role`, `left_at`)
+- Form Request validation and server-side authorization policies
+- Protecting routes based on role with Laravel middleware
+- Building an admin moderation dashboard
+
+---
+
+## 👤 Author
+
+**Lioubi Arabi** — Youcode Web Development Student  
+[![GitHub](https://img.shields.io/badge/GitHub-lioubiarabi-181717?style=flat-square&logo=github)](https://github.com/lioubiarabi)
+
+---
+
+*Because "who paid for the wifi last month?" should never start an argument again 🏠*
